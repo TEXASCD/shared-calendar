@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>调试页面</title>
+  <style>
+    body { font-family: sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+    h1 { color: #333; }
+    .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+    .success { background: #d1fae5; border-color: #10b981; }
+    .error { background: #fee2e2; border-color: #ef4444; }
+    .loading { background: #fef3c7; border-color: #f59e0b; }
+    button { padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 5px; }
+    button:hover { background: #4f46e5; }
+    pre { background: #f1f5f9; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    a { color: #6366f1; }
+  </style>
+</head>
+<body>
+  <h1>共享日历 - 诊断页面</h1>
+  
+  <div class="test" id="api-test">
+    <h3>API 测试</h3>
+    <button onclick="testAPI()">测试 API</button>
+    <pre id="api-result">点击按钮开始测试...</pre>
+  </div>
+  
+  <div class="test" id="create-test">
+    <h3>创建活动测试</h3>
+    <button onclick="createEvent()">创建测试活动</button>
+    <pre id="create-result">点击按钮创建测试活动...</pre>
+  </div>
+  
+  <div class="test" id="event-test">
+    <h3>活动信息测试</h3>
+    <input type="text" id="event-id" placeholder="输入活动ID" style="padding: 8px; width: 300px;">
+    <button onclick="getEventInfo()">获取活动信息</button>
+    <pre id="event-result">输入活动ID后点击按钮...</pre>
+  </div>
+  
+  <div class="test">
+    <h3>快速链接</h3>
+    <p><a href="/" target="_blank">主页</a></p>
+    <p><a href="/create" target="_blank">创建活动</a></p>
+    <p id="share-link">创建活动后，分享链接将显示在这里</p>
+  </div>
+  
+  <div class="test">
+    <h3>浏览器信息</h3>
+    <pre id="browser-info"></pre>
+  </div>
+
+  <script>
+    // 显示浏览器信息
+    document.getElementById('browser-info').textContent = 
+      'User Agent: ' + navigator.userAgent + '\n' +
+      'Platform: ' + navigator.platform + '\n' +
+      'Language: ' + navigator.language + '\n' +
+      'Cookies Enabled: ' + navigator.cookieEnabled + '\n' +
+      'Online: ' + navigator.onLine;
+
+    async function testAPI() {
+      const result = document.getElementById('api-result');
+      result.textContent = '测试中...';
+      try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+        result.textContent = 'API 状态: ' + response.status + '\n' + JSON.stringify(data, null, 2);
+        document.getElementById('api-test').className = 'test success';
+      } catch (err) {
+        result.textContent = '错误: ' + err.message;
+        document.getElementById('api-test').className = 'test error';
+      }
+    }
+
+    async function createEvent() {
+      const result = document.getElementById('create-result');
+      result.textContent = '创建中...';
+      try {
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: '测试活动 ' + new Date().toLocaleTimeString(),
+            description: '这是一个测试活动',
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            organizerName: '测试用户'
+          })
+        });
+        const data = await response.json();
+        result.textContent = '创建成功!\n' + JSON.stringify(data, null, 2);
+        document.getElementById('create-test').className = 'test success';
+        
+        // 显示分享链接
+        const shareUrl = window.location.origin + '/event/' + data.id;
+        document.getElementById('share-link').innerHTML = 
+          '分享链接: <a href="' + shareUrl + '" target="_blank">' + shareUrl + '</a>' +
+          '<br>访问码: <strong>' + data.accessCode + '</strong>';
+        
+        // 自动填入活动ID
+        document.getElementById('event-id').value = data.id;
+      } catch (err) {
+        result.textContent = '错误: ' + err.message;
+        document.getElementById('create-test').className = 'test error';
+      }
+    }
+
+    async function getEventInfo() {
+      const eventId = document.getElementById('event-id').value;
+      const result = document.getElementById('event-result');
+      if (!eventId) {
+        result.textContent = '请输入活动ID';
+        return;
+      }
+      result.textContent = '获取中...';
+      try {
+        const response = await fetch('/api/events/' + eventId + '/info');
+        const data = await response.json();
+        result.textContent = 'HTTP ' + response.status + '\n' + JSON.stringify(data, null, 2);
+        document.getElementById('event-test').className = response.ok ? 'test success' : 'test error';
+      } catch (err) {
+        result.textContent = '错误: ' + err.message;
+        document.getElementById('event-test').className = 'test error';
+      }
+    }
+
+    // 自动测试API
+    testAPI();
+  </script>
+</body>
+</html>
