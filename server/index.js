@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import express from 'express'
 import http from 'http'
@@ -411,7 +412,6 @@ async function startServer() {
     const publicIndex = path.join(publicPath, 'index.html')
     
     // 检查 dist/index.html 是否存在
-    const fs = require('fs')
     if (fs.existsSync(distIndex)) {
       res.sendFile(distIndex)
     } else {
