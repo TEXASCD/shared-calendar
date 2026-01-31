@@ -1,0 +1,78 @@
+{
+  "app": {
+    "title": "共享协作日历",
+    "subtitle": "多人实时协作，无需注册"
+  },
+  "nav": {
+    "online": "在线",
+    "people": "人"
+  },
+  "auth": {
+    "namePlaceholder": "输入你的名字",
+    "join": "加入协作",
+    "joined": "已加入"
+  },
+  "calendar": {
+    "today": "今天",
+    "prevMonth": "上个月",
+    "nextMonth": "下个月",
+    "weekdays": ["一", "二", "三", "四", "五", "六", "日"],
+    "months": ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
+  },
+  "event": {
+    "title": "事项标题",
+    "startTime": "开始时间",
+    "endTime": "结束时间",
+    "save": "保存",
+    "cancel": "取消",
+    "edit": "编辑",
+    "delete": "删除",
+    "noEvents": "当前日期暂无事项",
+    "addEvent": "添加事项",
+    "createdBy": "创建者",
+    "participants": "参与人员"
+  },
+  "note": {
+    "title": "备注",
+    "placeholder": "添加备注...",
+    "add": "添加"
+  },
+  "poll": {
+    "title": "投票",
+    "question": "投票主题",
+    "startPoll": "发起投票",
+    "addOption": "添加选项",
+    "optionPlaceholder": "输入选项",
+    "vote": "投票",
+    "votes": "票"
+  },
+  "tag": {
+    "title": "标签管理",
+    "create": "创建标签",
+    "namePlaceholder": "标签名称",
+    "available": "可参加",
+    "unavailable": "不可参加",
+    "apply": "应用到选中日期",
+    "selectDates": "请先拖选日期",
+    "selectTag": "请选择标签",
+    "weight": "权重说明",
+    "weightDesc": "可参加 +1，不可参加 -2"
+  },
+  "theme": {
+    "light": "浅色模式",
+    "dark": "深色模式"
+  },
+  "language": {
+    "zh": "中文",
+    "en": "English",
+    "ja": "日本語"
+  },
+  "common": {
+    "confirm": "确认",
+    "cancel": "取消",
+    "close": "关闭",
+    "loading": "加载中...",
+    "error": "出错了",
+    "success": "成功"
+  }
+}

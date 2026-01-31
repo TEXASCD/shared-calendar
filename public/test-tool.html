@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>调度系统测试工具</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #818cf8;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #334155;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #6366f1;
+      color: white;
+    }
+    .badge.participant { background: #22c55e; }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+    .btn-secondary {
+      background: #334155;
+      color: #e2e8f0;
+    }
+    .btn-success {
+      background: #22c55e;
+      color: white;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .output {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.8rem;
+      max-height: 200px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .output.success { border-color: #22c55e; }
+    .output.error { border-color: #ef4444; color: #fca5a5; }
+    .status-bar {
+      background: #334155;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+    .status-dot.active { background: #22c55e; }
+    .identity-selector {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .identity-btn {
+      flex: 1;
+      padding: 16px;
+      border: 2px solid #334155;
+      border-radius: 12px;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .identity-btn:hover {
+      border-color: #6366f1;
+      color: #e2e8f0;
+    }
+    .identity-btn.active {
+      border-color: #6366f1;
+      background: rgba(99, 102, 241, 0.1);
+      color: #818cf8;
+    }
+    .identity-btn .icon { font-size: 2rem; margin-bottom: 8px; }
+    .identity-btn .label { font-weight: 600; }
+    .identity-btn .desc { font-size: 0.75rem; margin-top: 4px; }
+    .hidden { display: none !important; }
+    .date-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .date-chip {
+      padding: 4px 10px;
+      background: #334155;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .date-chip:hover { border-color: #6366f1; }
+    .date-chip.selected { background: #6366f1; }
+    .date-chip.available { background: #166534; }
+    .date-chip.unavailable { background: #991b1b; }
+    /* 正在修改的已标记日期 - 高亮边框 */
+    .date-chip.available.selected { 
+      background: #166534; 
+      border-color: #fbbf24; 
+      box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+    }
+    .date-chip.unavailable.selected { 
+      background: #991b1b; 
+      border-color: #fbbf24; 
+      box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+    }
+    .date-list {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .date-list.dragging .date-chip {
+      cursor: crosshair;
+    }
+    /* 评论列表样式 */
+    .comment-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .comment-item {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .comment-item:last-child {
+      margin-bottom: 0;
+    }
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .comment-author {
+      font-weight: 600;
+      color: #818cf8;
+      font-size: 0.9rem;
+    }
+    .comment-time {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .comment-content {
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .comment-empty {
+      text-align: center;
+      color: #64748b;
+      padding: 20px;
+      font-size: 0.9rem;
+    }
+    /* 评论操作按钮 */
+    .comment-actions {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+    .comment-actions button {
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-edit {
+      background: #334155;
+      color: #e2e8f0;
+    }
+    .btn-edit:hover {
+      background: #475569;
+    }
+    .btn-delete {
+      background: #7f1d1d;
+      color: #fecaca;
+    }
+    .btn-delete:hover {
+      background: #991b1b;
+    }
+    /* 编辑评论表单 */
+    .comment-edit-form {
+      margin-top: 8px;
+    }
+    .comment-edit-form textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #6366f1;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 0.85rem;
+      resize: none;
+    }
+    .comment-edit-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      justify-content: flex-end;
+    }
+    .comment-edit-actions button {
+      padding: 4px 12px;
+      font-size: 0.8rem;
+    }
+    .comment-item.editing {
+      border-color: #6366f1;
+    }
+    /* 参与者管理样式 */
+    .participant-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .participant-item {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .participant-item:last-child {
+      margin-bottom: 0;
+    }
+    .participant-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .participant-name {
+      font-weight: 600;
+      color: #22c55e;
+      font-size: 0.9rem;
+    }
+    .participant-stats {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 6px;
+    }
+    .participant-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .participant-item.editing {
+      border-color: #6366f1;
+    }
+    .participant-edit-form {
+      margin-top: 8px;
+    }
+    .participant-edit-form input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #6366f1;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 0.85rem;
+    }
+    .participant-edit-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      justify-content: flex-end;
+    }
+    .participant-empty {
+      text-align: center;
+      color: #64748b;
+      padding: 20px;
+      font-size: 0.9rem;
+    }
+    .participant-detail {
+      background: #1e293b;
+      border-radius: 6px;
+      padding: 8px;
+      margin-top: 8px;
+      font-size: 0.8rem;
+    }
+    .participant-detail-title {
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .participant-detail-item {
+      color: #e2e8f0;
+      padding: 2px 0;
+    }
+    .participant-item.expanded {
+      border-color: #6366f1;
+    }
+    .participant-stats {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .expand-icon {
+      margin-left: auto;
+      font-size: 0.7rem;
+      color: #64748b;
+      transition: transform 0.2s;
+    }
+    .participant-item.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+    .participant-details {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #334155;
+    }
+    .detail-section {
+      margin-bottom: 12px;
+    }
+    .detail-section:last-child {
+      margin-bottom: 0;
+    }
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .detail-header h4 {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin: 0;
+    }
+    .avail-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .avail-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    .avail-chip.available {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+    .avail-chip.unavailable {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+    .chip-delete {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      padding: 0 2px;
+      font-size: 0.9rem;
+      opacity: 0.6;
+    }
+    .chip-delete:hover {
+      opacity: 1;
+    }
+    .participant-comments {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .participant-comment-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      background: #1e293b;
+      padding: 8px 10px;
+      border-radius: 6px;
+    }
+    .comment-text {
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      flex: 1;
+    }
+    .comment-item-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .btn-xs {
+      padding: 2px 6px !important;
+      font-size: 0.7rem !important;
+    }
+    /* 模态框样式 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 480px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-content h3 {
+      margin: 0 0 16px 0;
+      color: #e2e8f0;
+    }
+    .date-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 8px;
+      background: #0f172a;
+      border-radius: 6px;
+    }
+    .date-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: #334155;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .date-checkbox.marked {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .date-checkbox input {
+      width: auto;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 调度系统测试工具</h1>
+
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-dot" id="serverStatus"></span>
+        <span>服务器状态</span>
+      </div>
+      <div class="status-item">
+        <strong>当前活动:</strong>
+        <span id="currentEventId">未选择</span>
+      </div>
+      <div class="status-item">
+        <strong>身份:</strong>
+        <span id="currentIdentity">未选择</span>
+      </div>
+      <button class="btn-secondary" onclick="clearSession()">清除会话</button>
+    </div>
+
+    <div class="identity-selector">
+      <button class="identity-btn" onclick="selectIdentity('organizer')" id="btnOrganizer">
+        <div class="icon">👑</div>
+        <div class="label">发起者</div>
+        <div class="desc">创建活动、管理参与者</div>
+      </button>
+      <button class="identity-btn" onclick="selectIdentity('participant')" id="btnParticipant">
+        <div class="icon">👤</div>
+        <div class="label">参与者</div>
+        <div class="desc">加入活动、标记可用性</div>
+      </button>
+    </div>
+
+    <div class="grid">
+      <!-- 发起者面板 -->
+      <div class="card organizer-panel hidden" id="organizerPanel">
+        <h2><span class="badge">发起者</span> 创建活动</h2>
+        <div class="form-group">
+          <label>活动标题</label>
+          <input type="text" id="eventTitle" placeholder="团队聚餐时间" value="团队聚餐时间">
+        </div>
+        <div class="form-group">
+          <label>描述</label>
+          <textarea id="eventDesc" rows="2" placeholder="选择一个大家都方便的时间">选择一个大家都方便的时间</textarea>
+        </div>
+        <div class="form-group">
+          <label>开始日期</label>
+          <input type="date" id="startDate">
+        </div>
+        <div class="form-group">
+          <label>结束日期</label>
+          <input type="date" id="endDate">
+        </div>
+        <div class="form-group">
+          <label>发起者名字</label>
+          <input type="text" id="organizerName" placeholder="张三" value="张三">
+        </div>
+        <button class="btn-primary" onclick="handleCreateEvent()">创建活动</button>
+        <div id="createOutput" class="output hidden"></div>
+      </div>
+
+      <!-- 发起者管理面板 -->
+      <div class="card organizer-panel hidden" id="organizerManagePanel">
+        <h2><span class="badge">发起者</span> 活动管理</h2>
+        <div class="form-group">
+          <label>活动 ID</label>
+          <input type="text" id="manageEventId" placeholder="粘贴活动 ID">
+        </div>
+        <div class="form-group">
+          <label>发起者 Token</label>
+          <input type="text" id="organizerToken" placeholder="粘贴 Token">
+        </div>
+        <div class="btn-group">
+          <button class="btn-primary" onclick="loadEventAsOrganizer()">加载活动</button>
+          <button class="btn-secondary" onclick="getEventData()">刷新数据</button>
+        </div>
+        <div id="manageOutput" class="output hidden"></div>
+      </div>
+
+      <!-- 参与者管理面板（仅发起者） -->
+      <div class="card organizer-panel hidden" id="participantManagePanel">
+        <h2><span class="badge">发起者</span> 参与者管理</h2>
+        <p style="font-size:0.8rem;color:#64748b;margin-bottom:12px;">点击参与者可展开详情并编辑</p>
+        <div id="participantList" class="participant-list"></div>
+      </div>
+
+      <!-- 参与者面板 -->
+      <div class="card participant-panel hidden" id="participantPanel">
+        <h2><span class="badge participant">参与者</span> 加入活动</h2>
+        <div class="form-group">
+          <label>活动 ID</label>
+          <input type="text" id="joinEventId" placeholder="粘贴活动 ID">
+        </div>
+        <div class="form-group">
+          <label>访问码 (6位数字)</label>
+          <input type="text" id="accessCode" placeholder="123456" maxlength="6">
+        </div>
+        <div class="form-group">
+          <label>你的名字</label>
+          <input type="text" id="participantName" placeholder="李四" value="李四">
+        </div>
+        <button class="btn-success" onclick="joinEvent()">加入活动</button>
+        <div id="joinOutput" class="output hidden"></div>
+      </div>
+
+      <!-- 可用性标记面板 -->
+      <div class="card participant-panel hidden" id="availabilityPanel">
+        <h2><span class="badge participant">参与者</span> 标记可用性</h2>
+        <div class="form-group">
+          <label>选择日期 (点击切换)</label>
+          <div id="dateList" class="date-list"></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn-success" onclick="markAvailable()">✓ 标记可参加</button>
+          <button class="btn-danger" onclick="markUnavailable()">✗ 标记不可参加</button>
+        </div>
+        <div id="availOutput" class="output hidden"></div>
+      </div>
+
+      <!-- 活动数据面板 -->
+      <div class="card" id="dataPanel">
+        <h2>📊 活动数据</h2>
+        <div class="btn-group" style="margin-top: 0; margin-bottom: 12px;">
+          <button class="btn-secondary" onclick="refreshData()">刷新数据</button>
+        </div>
+        <div id="dataOutput" class="output">点击刷新查看数据</div>
+      </div>
+
+      <!-- 评论面板 -->
+      <div class="card" id="commentPanel">
+        <h2>💬 评论</h2>
+        <div id="commentList" class="comment-list"></div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label>发表评论</label>
+          <textarea id="commentContent" rows="2" placeholder="写点什么..."></textarea>
+        </div>
+        <button class="btn-primary" onclick="addComment()">发送</button>
+        <div id="commentOutput" class="output hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 常量
+    const DEFAULT_DATE_RANGE_DAYS = 7;
+    const HEALTH_CHECK_INTERVAL_MS = 5000;
+    
+    // 状态
+    let state = {
+      identity: null, // 'organizer' | 'participant'
+      eventId: null,
+      organizerToken: null,
+      participantName: null,
+      eventData: null,
+      selectedDates: new Set()
+    };
+    
+    let healthCheckTimer = null;
+    
+    // 拖动选择状态
+    let dragState = {
+      isDragging: false,
+      isSelecting: true // true = 添加选择, false = 取消选择
+    };
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      // 设置默认日期
+      const today = new Date();
+      const nextWeek = new Date(today);
+      nextWeek.setDate(today.getDate() + DEFAULT_DATE_RANGE_DAYS);
+      
+      document.getElementById('startDate').value = formatDate(today);
+      document.getElementById('endDate').value = formatDate(nextWeek);
+      
+      // 从 sessionStorage 恢复状态
+      loadState();
+      
+      checkServer();
+      healthCheckTimer = setInterval(checkServer, HEALTH_CHECK_INTERVAL_MS);
+      
+      // 全局鼠标松开事件 - 结束拖动选择
+      document.addEventListener('mouseup', handleDragEnd);
+    });
+    
+    // 页面卸载时清理
+    window.addEventListener('beforeunload', () => {
+      if (healthCheckTimer) {
+        clearInterval(healthCheckTimer);
+      }
+    });
+
+    function formatDate(date) {
+      return date.toISOString().split('T')[0];
+    }
+    
+    function loadState() {
+      try {
+        const saved = sessionStorage.getItem('testToolState');
+        if (!saved) return;
+        
+        const parsed = JSON.parse(saved);
+        // 正确恢复 Set（JSON.stringify 会把 Set 变成 {}）
+        state = {
+          ...parsed,
+          selectedDates: new Set(parsed.selectedDatesArray || [])
+        };
+        
+        if (state.identity) {
+          selectIdentity(state.identity, true);
+        }
+        updateStatusBar();
+      } catch (err) {
+        console.error('恢复状态失败:', err);
+        sessionStorage.removeItem('testToolState');
+      }
+    }
+
+    function saveState() {
+      // Set 无法直接 JSON.stringify，转换为数组保存
+      const toSave = {
+        ...state,
+        selectedDatesArray: Array.from(state.selectedDates),
+        selectedDates: undefined, // 不保存 Set 本身
+        eventData: undefined // 不保存大数据
+      };
+      sessionStorage.setItem('testToolState', JSON.stringify(toSave));
+    }
+
+    function clearSession() {
+      sessionStorage.removeItem('testToolState');
+      state = {
+        identity: null,
+        eventId: null,
+        organizerToken: null,
+        participantName: null,
+        eventData: null,
+        selectedDates: new Set()
+      };
+      updateStatusBar();
+      document.querySelectorAll('.identity-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.organizer-panel, .participant-panel').forEach(p => p.classList.add('hidden'));
+    }
+
+    function updateStatusBar() {
+      document.getElementById('currentEventId').textContent = state.eventId || '未选择';
+      let identity = '未选择';
+      if (state.identity === 'organizer') identity = '👑 发起者';
+      if (state.identity === 'participant') identity = '👤 ' + (state.participantName || '参与者');
+      document.getElementById('currentIdentity').textContent = identity;
+    }
+
+    async function checkServer() {
+      try {
+        const res = await fetch('/api/health');
+        document.getElementById('serverStatus').classList.toggle('active', res.ok);
+      } catch {
+        document.getElementById('serverStatus').classList.remove('active');
+      }
+    }
+
+    function selectIdentity(identity, skipSave = false) {
+      state.identity = identity;
+      
+      document.querySelectorAll('.identity-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn' + identity.charAt(0).toUpperCase() + identity.slice(1)).classList.add('active');
+      
+      document.querySelectorAll('.organizer-panel').forEach(p => p.classList.toggle('hidden', identity !== 'organizer'));
+      document.querySelectorAll('.participant-panel').forEach(p => p.classList.toggle('hidden', identity !== 'participant'));
+      
+      if (!skipSave) {
+        updateStatusBar();
+        saveState();
+      }
+    }
+
+    function showOutput(id, content, isError = false) {
+      const el = document.getElementById(id);
+      el.classList.remove('hidden', 'success', 'error');
+      el.classList.add(isError ? 'error' : 'success');
+      el.textContent = typeof content === 'object' ? JSON.stringify(content, null, 2) : content;
+    }
+    
+    async function copyToClipboard(text, btnEl) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const originalText = btnEl.innerHTML;
+        btnEl.innerHTML = '✓ 已复制';
+        btnEl.style.background = '#166534';
+        setTimeout(() => {
+          btnEl.innerHTML = originalText;
+          btnEl.style.background = '#334155';
+        }, 2000);
+      } catch (err) {
+        // 降级方案
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        const originalText = btnEl.innerHTML;
+        btnEl.innerHTML = '✓ 已复制';
+        btnEl.style.background = '#166534';
+        setTimeout(() => {
+          btnEl.innerHTML = originalText;
+          btnEl.style.background = '#334155';
+        }, 2000);
+      }
+    }
+
+    // API 调用
+    async function handleCreateEvent() {
+      // 获取表单数据
+      const formData = {
+        title: document.getElementById('eventTitle').value,
+        description: document.getElementById('eventDesc').value,
+        startDate: document.getElementById('startDate').value,
+        endDate: document.getElementById('endDate').value,
+        organizerName: document.getElementById('organizerName').value
+      };
+      
+      // 前端验证
+      if (!formData.title.trim()) {
+        showOutput('createOutput', '错误: 活动标题不能为空', true);
+        return;
+      }
+      if (!formData.startDate) {
+        showOutput('createOutput', '错误: 请选择开始日期', true);
+        return;
+      }
+      if (!formData.endDate) {
+        showOutput('createOutput', '错误: 请选择结束日期', true);
+        return;
+      }
+      if (!formData.organizerName.trim()) {
+        showOutput('createOutput', '错误: 发起者名字不能为空', true);
+        return;
+      }
+      
+      console.log('发送请求:', formData);
+      showOutput('createOutput', '正在创建活动...');
+      
+      try {
+        const res = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        
+        console.log('响应状态:', res.status);
+        const data = await res.json();
+        console.log('响应数据:', data);
+        
+        if (res.ok) {
+          state.eventId = data.id;
+          state.organizerToken = data.organizerToken;
+          // 发起者同时也是参与者，可以评论和标记可用性
+          state.participantName = formData.organizerName;
+          document.getElementById('manageEventId').value = data.id;
+          document.getElementById('organizerToken').value = data.organizerToken;
+          saveState();
+          updateStatusBar();
+          
+          // 显示成功信息，突出邀请码
+          const outputEl = document.getElementById('createOutput');
+          outputEl.classList.remove('hidden', 'error');
+          outputEl.classList.add('success');
+          outputEl.innerHTML = `
+<div style="color:#22c55e;font-weight:bold;font-size:1.1em;margin-bottom:8px;">✓ 活动创建成功！</div>
+<div style="background:#166534;padding:12px;border-radius:8px;margin:8px 0;text-align:center;">
+  <div style="font-size:0.8em;color:#86efac;">分享此邀请码给参与者</div>
+  <div style="font-size:1.8em;font-weight:bold;letter-spacing:4px;color:#fff;">${data.accessCode}</div>
+</div>
+<div style="display:flex;gap:8px;margin:12px 0;">
+  <button onclick="copyToClipboard('${data.id}', this)" class="btn-copy" style="flex:1;padding:8px;background:#334155;border:none;border-radius:6px;color:#e2e8f0;cursor:pointer;font-size:0.85em;">
+    📋 复制活动ID
+  </button>
+  <button onclick="copyToClipboard('${data.accessCode}', this)" class="btn-copy" style="flex:1;padding:8px;background:#334155;border:none;border-radius:6px;color:#e2e8f0;cursor:pointer;font-size:0.85em;">
+    📋 复制邀请码
+  </button>
+</div>
+<div style="font-size:0.8em;color:#64748b;background:#1e293b;padding:8px;border-radius:6px;margin-top:8px;">
+  <div><strong>活动ID:</strong> <code style="color:#818cf8">${data.id}</code></div>
+  <div><strong>管理Token:</strong> <code style="color:#818cf8">${data.organizerToken}</code></div>
+</div>`;
+          outputEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          showOutput('createOutput', { error: data.error || '创建失败', details: data }, true);
+        }
+      } catch (err) {
+        console.error('创建活动错误:', err);
+        showOutput('createOutput', { error: '网络错误', message: err.message }, true);
+      }
+    }
+
+    async function loadEventAsOrganizer() {
+      const eventId = document.getElementById('manageEventId').value.trim();
+      const token = document.getElementById('organizerToken').value.trim();
+      
+      if (!eventId) {
+        showOutput('manageOutput', '错误: 活动 ID 不能为空', true);
+        return;
+      }
+      if (!token) {
+        showOutput('manageOutput', '错误: Token 不能为空', true);
+        return;
+      }
+      
+      state.eventId = eventId;
+      state.organizerToken = token;
+      saveState();
+      updateStatusBar();
+      await getEventData();
+    }
+
+    async function joinEvent() {
+      const eventId = document.getElementById('joinEventId').value.trim();
+      const accessCode = document.getElementById('accessCode').value.trim();
+      const name = document.getElementById('participantName').value.trim();
+      
+      // 输入验证
+      if (!eventId) {
+        showOutput('joinOutput', '错误: 活动 ID 不能为空', true);
+        return;
+      }
+      if (!accessCode) {
+        showOutput('joinOutput', '错误: 访问码不能为空', true);
+        return;
+      }
+      if (!/^\d{6}$/.test(accessCode)) {
+        showOutput('joinOutput', '错误: 访问码必须是6位数字', true);
+        return;
+      }
+      if (!name) {
+        showOutput('joinOutput', '错误: 名字不能为空', true);
+        return;
+      }
+      
+      try {
+        const res = await fetch(`/api/events/${encodeURIComponent(eventId)}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessCode, name })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          // 确保设置为参与者身份
+          state.identity = 'participant';
+          state.eventId = eventId;
+          state.participantName = name;
+          saveState();
+          updateStatusBar();
+          
+          // 确保参与者面板显示
+          selectIdentity('participant', true);
+          
+          showOutput('joinOutput', {
+            message: data.isReturning ? '✓ 欢迎回来！' : '✓ 加入成功！',
+            participantId: data.participantId,
+            tip: '现在可以在下方标记你的可用日期'
+          });
+          
+          // 刷新数据并滚动到日期面板
+          await refreshData();
+          document.getElementById('availabilityPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          showOutput('joinOutput', data, true);
+        }
+      } catch (err) {
+        showOutput('joinOutput', { error: '加入失败', message: err.message }, true);
+      }
+    }
+
+    async function getEventData() {
+      if (!state.eventId) {
+        console.warn('getEventData: 没有活动ID');
+        return null;
+      }
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      const headers = {};
+      
+      // HTTP header 只支持 ISO-8859-1，中文需要编码
+      if (state.identity === 'organizer' && state.organizerToken) {
+        headers['x-organizer-token'] = state.organizerToken;
+      } else if (state.identity === 'participant' && state.participantName) {
+        headers['x-participant-name'] = encodeURIComponent(state.participantName);
+      }
+      
+      // 参与者必须有名字才能获取数据
+      const endpoint = (state.identity === 'participant' && state.participantName)
+        ? `/api/events/${encodedId}/participant`
+        : `/api/events/${encodedId}`;
+      
+      console.log('getEventData:', { endpoint, identity: state.identity, participantName: state.participantName });
+      
+      try {
+        const res = await fetch(endpoint, { headers });
+        const data = await res.json();
+        if (res.ok) {
+          state.eventData = data;
+          showOutput('manageOutput', data);
+          renderDateList(data);
+          return data;
+        } else {
+          showOutput('manageOutput', data, true);
+          return null;
+        }
+      } catch (err) {
+        showOutput('manageOutput', err.message, true);
+        return null;
+      }
+    }
+
+    async function refreshData() {
+      console.log('refreshData called, state:', { eventId: state.eventId, identity: state.identity, participantName: state.participantName });
+      
+      const data = await getEventData();
+      if (data) {
+        const summary = {
+          event: data.event?.title,
+          dates: `${data.event?.startDate} ~ ${data.event?.endDate}`,
+          participants: data.participants?.map(p => p.name) || [],
+          availability: (data.availability?.length || 0) + ' 条记录',
+          comments: (data.comments?.length || 0) + ' 条评论'
+        };
+        showOutput('dataOutput', summary);
+        renderCommentList(data);
+        
+        // 发起者可以看到参与者管理面板
+        if (state.identity === 'organizer' && state.organizerToken) {
+          renderParticipantList(data);
+        }
+        
+        console.log('Data refreshed successfully');
+      } else {
+        showOutput('dataOutput', '无法获取数据，请检查身份和活动ID', true);
+      }
+    }
+
+    function renderDateList(data) {
+      const container = document.getElementById('dateList');
+      
+      console.log('renderDateList called with:', data);
+      console.log('Current participantName:', state.participantName);
+      
+      if (!data?.event) {
+        container.innerHTML = '<span style="color:#94a3b8">暂无日期数据</span>';
+        console.warn('renderDateList: 没有活动数据');
+        return;
+      }
+      
+      console.log('Event dates:', data.event.startDate, 'to', data.event.endDate);
+      
+      const start = new Date(data.event.startDate);
+      const end = new Date(data.event.endDate);
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        container.innerHTML = '<span style="color:#ef4444">日期格式错误</span>';
+        console.error('Invalid dates:', data.event.startDate, data.event.endDate);
+        return;
+      }
+      
+      // 构建可用性映射 O(n) 而不是每次查找 O(n)
+      const availMap = new Map();
+      if (data.availability) {
+        for (const a of data.availability) {
+          if (a.participantName === state.participantName) {
+            availMap.set(a.date, a.status);
+          }
+        }
+      }
+      
+      // 使用 DocumentFragment 减少 DOM 操作
+      const fragment = document.createDocumentFragment();
+      const current = new Date(start);
+      
+      while (current <= end) {
+        const dateStr = formatDate(current);
+        const chip = document.createElement('div');
+        chip.className = 'date-chip';
+        chip.textContent = dateStr.slice(5); // MM-DD
+        chip.dataset.date = dateStr;
+        
+        const status = availMap.get(dateStr);
+        if (status === 'available') {
+          chip.classList.add('available');
+        } else if (status === 'unavailable') {
+          chip.classList.add('unavailable');
+        }
+        
+        if (state.selectedDates.has(dateStr)) {
+          chip.classList.add('selected');
+        }
+        
+        // 鼠标按下 - 开始拖动
+        chip.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          const d = this.dataset.date;
+          dragState.isDragging = true;
+          // 如果当前已选中，则拖动时取消选择；否则拖动时添加选择
+          dragState.isSelecting = !state.selectedDates.has(d);
+          toggleDateSelection(this, d);
+          container.classList.add('dragging');
+        });
+        
+        // 鼠标进入 - 拖动中选择
+        chip.addEventListener('mouseenter', function() {
+          if (dragState.isDragging) {
+            const d = this.dataset.date;
+            if (dragState.isSelecting) {
+              // 添加选择
+              if (!state.selectedDates.has(d)) {
+                state.selectedDates.add(d);
+                this.classList.add('selected');
+              }
+            } else {
+              // 取消选择
+              if (state.selectedDates.has(d)) {
+                state.selectedDates.delete(d);
+                this.classList.remove('selected');
+              }
+            }
+          }
+        });
+        
+        fragment.appendChild(chip);
+        current.setDate(current.getDate() + 1);
+      }
+      
+      container.innerHTML = '';
+      container.appendChild(fragment);
+    }
+    
+    // 存储当前活动数据用于参与者详情
+    let currentEventData = null;
+    
+    function renderParticipantList(data) {
+      const container = document.getElementById('participantList');
+      currentEventData = data; // 保存数据用于展开详情
+      
+      if (!data?.participants || data.participants.length === 0) {
+        container.innerHTML = '<div class="participant-empty">暂无参与者</div>';
+        return;
+      }
+      
+      // 构建可用性统计和数据
+      const availStats = {};
+      const availData = {};
+      if (data.availability) {
+        for (const a of data.availability) {
+          if (!availStats[a.participantId]) {
+            availStats[a.participantId] = { available: 0, unavailable: 0 };
+            availData[a.participantId] = [];
+          }
+          if (a.status === 'available') {
+            availStats[a.participantId].available++;
+          } else {
+            availStats[a.participantId].unavailable++;
+          }
+          availData[a.participantId].push(a);
+        }
+      }
+      
+      // 构建评论统计和数据
+      const commentStats = {};
+      const commentData = {};
+      if (data.comments) {
+        for (const c of data.comments) {
+          if (!commentStats[c.participantId]) {
+            commentStats[c.participantId] = 0;
+            commentData[c.participantId] = [];
+          }
+          commentStats[c.participantId]++;
+          commentData[c.participantId].push(c);
+        }
+      }
+      
+      const fragment = document.createDocumentFragment();
+      
+      for (const p of data.participants) {
+        const item = document.createElement('div');
+        item.className = 'participant-item';
+        item.dataset.participantId = p.id;
+        
+        const stats = availStats[p.id] || { available: 0, unavailable: 0 };
+        const commentCount = commentStats[p.id] || 0;
+        const pAvail = availData[p.id] || [];
+        const pComments = commentData[p.id] || [];
+        
+        // 判断是否是发起者
+        const isOrganizer = p.name === data.event?.organizerName;
+        
+        // 可用性列表 HTML
+        let availHtml = '';
+        if (pAvail.length > 0) {
+          availHtml = pAvail.map(a => `
+            <span class="avail-chip ${a.status}" data-date="${a.date}" data-participant="${p.id}">
+              ${a.date.slice(5)} ${a.status === 'available' ? '✓' : '✗'}
+              <button class="chip-delete" onclick="event.stopPropagation(); deleteParticipantAvailability(${p.id}, '${a.date}')">×</button>
+            </span>
+          `).join('');
+        } else {
+          availHtml = '<span style="color:#64748b;font-size:0.8rem;">暂无标记</span>';
+        }
+        
+        // 评论列表 HTML
+        let commentsHtml = '';
+        if (pComments.length > 0) {
+          commentsHtml = pComments.map(c => `
+            <div class="participant-comment-item">
+              <span class="comment-text">${escapeHtml(c.content)}</span>
+              <div class="comment-item-actions">
+                <button class="btn-edit btn-xs" onclick="event.stopPropagation(); editParticipantComment(${c.id}, '${escapeHtml(c.content).replace(/'/g, "\\'")}')">编辑</button>
+                <button class="btn-delete btn-xs" onclick="event.stopPropagation(); deleteParticipantComment(${c.id})">删除</button>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          commentsHtml = '<span style="color:#64748b;font-size:0.8rem;">暂无评论</span>';
+        }
+        
+        item.innerHTML = `
+          <div class="participant-header" onclick="toggleParticipantDetails(${p.id})">
+            <span class="participant-name">${escapeHtml(p.name)}${isOrganizer ? ' 👑' : ''}</span>
+            <div class="participant-actions">
+              <button class="btn-edit" onclick="event.stopPropagation(); startEditParticipant(${p.id}, '${escapeHtml(p.name).replace(/'/g, "\\'")}')">编辑名字</button>
+              <button class="btn-delete" onclick="event.stopPropagation(); deleteParticipant(${p.id}, '${escapeHtml(p.name).replace(/'/g, "\\'")}')">删除</button>
+            </div>
+          </div>
+          <div class="participant-stats" onclick="toggleParticipantDetails(${p.id})">
+            可参加: ${stats.available} 天 | 不可参加: ${stats.unavailable} 天 | 评论: ${commentCount} 条
+            <span class="expand-icon">▼</span>
+          </div>
+          <div class="participant-details hidden" id="participant-details-${p.id}">
+            <div class="detail-section">
+              <div class="detail-header">
+                <h4>可用性标记</h4>
+                <button class="btn-secondary btn-xs" onclick="event.stopPropagation(); openAddAvailabilityModal(${p.id}, '${escapeHtml(p.name)}')">+ 添加</button>
+              </div>
+              <div class="avail-chips">${availHtml}</div>
+            </div>
+            <div class="detail-section">
+              <div class="detail-header">
+                <h4>评论</h4>
+              </div>
+              <div class="participant-comments">${commentsHtml}</div>
+            </div>
+          </div>
+        `;
+        
+        fragment.appendChild(item);
+      }
+      
+      container.innerHTML = '';
+      container.appendChild(fragment);
+    }
+    
+    function toggleParticipantDetails(participantId) {
+      const details = document.getElementById(`participant-details-${participantId}`);
+      const item = document.querySelector(`[data-participant-id="${participantId}"]`);
+      
+      if (details.classList.contains('hidden')) {
+        // 先关闭其他展开的详情
+        document.querySelectorAll('.participant-details:not(.hidden)').forEach(d => {
+          d.classList.add('hidden');
+          d.closest('.participant-item')?.classList.remove('expanded');
+        });
+        details.classList.remove('hidden');
+        item.classList.add('expanded');
+      } else {
+        details.classList.add('hidden');
+        item.classList.remove('expanded');
+      }
+    }
+    
+    async function deleteParticipantAvailability(participantId, date) {
+      if (!confirm(`确定要删除 ${date} 的可用性标记吗？`)) return;
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/participants/${participantId}/availability`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-organizer-token': state.organizerToken
+          },
+          body: JSON.stringify({ dates: [date] })
+        });
+        
+        if (res.ok) {
+          await refreshData();
+        } else {
+          const data = await res.json();
+          alert('删除失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('请求失败: ' + err.message);
+      }
+    }
+    
+    function openAddAvailabilityModal(participantId, participantName) {
+      // 获取活动日期范围
+      if (!currentEventData?.event) {
+        alert('请先加载活动数据');
+        return;
+      }
+      
+      const event = currentEventData.event;
+      const start = new Date(event.startDate);
+      const end = new Date(event.endDate);
+      
+      // 获取该参与者已标记的日期
+      const markedDates = new Set();
+      if (currentEventData.availability) {
+        currentEventData.availability
+          .filter(a => a.participantId === participantId)
+          .forEach(a => markedDates.add(a.date));
+      }
+      
+      // 生成日期选择列表
+      let datesHtml = '';
+      const current = new Date(start);
+      while (current <= end) {
+        const dateStr = formatDate(current);
+        const isMarked = markedDates.has(dateStr);
+        datesHtml += `
+          <label class="date-checkbox ${isMarked ? 'marked' : ''}">
+            <input type="checkbox" value="${dateStr}" ${isMarked ? 'disabled' : ''}>
+            ${dateStr.slice(5)} ${isMarked ? '(已标记)' : ''}
+          </label>
+        `;
+        current.setDate(current.getDate() + 1);
+      }
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.id = 'availabilityModal';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <h3>为 ${escapeHtml(participantName)} 添加可用性</h3>
+          <div class="form-group">
+            <label>选择日期</label>
+            <div class="date-checkboxes">${datesHtml}</div>
+          </div>
+          <div class="form-group">
+            <label>状态</label>
+            <select id="availabilityStatus">
+              <option value="available">✓ 可以参加</option>
+              <option value="unavailable">✗ 无法参加</option>
+            </select>
+          </div>
+          <div class="btn-group">
+            <button class="btn-secondary" onclick="closeAvailabilityModal()">取消</button>
+            <button class="btn-primary" onclick="saveParticipantAvailability(${participantId})">保存</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+    }
+    
+    function closeAvailabilityModal() {
+      const modal = document.getElementById('availabilityModal');
+      if (modal) modal.remove();
+    }
+    
+    async function saveParticipantAvailability(participantId) {
+      const modal = document.getElementById('availabilityModal');
+      const checkboxes = modal.querySelectorAll('.date-checkboxes input:checked');
+      const dates = Array.from(checkboxes).map(cb => cb.value);
+      const status = document.getElementById('availabilityStatus').value;
+      
+      if (dates.length === 0) {
+        alert('请至少选择一个日期');
+        return;
+      }
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/participants/${participantId}/availability`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-organizer-token': state.organizerToken
+          },
+          body: JSON.stringify({ dates, status })
+        });
+        
+        if (res.ok) {
+          closeAvailabilityModal();
+          await refreshData();
+        } else {
+          const data = await res.json();
+          alert('保存失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('请求失败: ' + err.message);
+      }
+    }
+    
+    function editParticipantComment(commentId, content) {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.id = 'editCommentModal';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <h3>编辑评论</h3>
+          <div class="form-group">
+            <textarea id="editCommentContent" rows="3">${escapeHtml(content)}</textarea>
+          </div>
+          <div class="btn-group">
+            <button class="btn-secondary" onclick="closeEditCommentModal()">取消</button>
+            <button class="btn-primary" onclick="saveParticipantCommentEdit(${commentId})">保存</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      document.getElementById('editCommentContent').focus();
+    }
+    
+    function closeEditCommentModal() {
+      const modal = document.getElementById('editCommentModal');
+      if (modal) modal.remove();
+    }
+    
+    async function saveParticipantCommentEdit(commentId) {
+      const content = document.getElementById('editCommentContent').value.trim();
+      
+      if (!content) {
+        alert('评论内容不能为空');
+        return;
+      }
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/comments/${commentId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-organizer-token': state.organizerToken
+          },
+          body: JSON.stringify({ content })
+        });
+        
+        if (res.ok) {
+          closeEditCommentModal();
+          await refreshData();
+        } else {
+          const data = await res.json();
+          alert('保存失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('请求失败: ' + err.message);
+      }
+    }
+    
+    async function deleteParticipantComment(commentId) {
+      if (!confirm('确定要删除这条评论吗？')) return;
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/comments/${commentId}`, {
+          method: 'DELETE',
+          headers: {
+            'x-organizer-token': state.organizerToken
+          }
+        });
+        
+        if (res.ok) {
+          await refreshData();
+        } else {
+          const data = await res.json();
+          alert('删除失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('请求失败: ' + err.message);
+      }
+    }
+    
+    function startEditParticipant(participantId, currentName) {
+      const item = document.querySelector(`[data-participant-id="${participantId}"]`);
+      if (!item) return;
+      
+      item.classList.add('editing');
+      
+      // 替换为编辑表单
+      const statsDiv = item.querySelector('.participant-stats');
+      const originalStats = statsDiv.innerHTML;
+      
+      statsDiv.innerHTML = `
+        <div class="participant-edit-form">
+          <input type="text" id="edit-participant-${participantId}" value="${escapeHtml(currentName)}" placeholder="输入新名字">
+          <div class="participant-edit-actions">
+            <button class="btn-secondary" onclick="cancelEditParticipant(${participantId}, '${originalStats.replace(/'/g, "\\'")}')">取消</button>
+            <button class="btn-primary" onclick="saveEditParticipant(${participantId})">保存</button>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById(`edit-participant-${participantId}`).focus();
+    }
+    
+    function cancelEditParticipant(participantId, originalStats) {
+      const item = document.querySelector(`[data-participant-id="${participantId}"]`);
+      if (!item) return;
+      
+      item.classList.remove('editing');
+      const statsDiv = item.querySelector('.participant-stats, .participant-edit-form')?.parentElement || item.querySelector('.participant-stats');
+      
+      // 刷新数据以恢复原状
+      refreshData();
+    }
+    
+    async function saveEditParticipant(participantId) {
+      const input = document.getElementById(`edit-participant-${participantId}`);
+      const newName = input.value.trim();
+      
+      if (!newName) {
+        alert('名字不能为空');
+        return;
+      }
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/participants/${participantId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-organizer-token': state.organizerToken
+          },
+          body: JSON.stringify({ name: newName })
+        });
+        
+        if (res.ok) {
+          await refreshData();
+        } else {
+          const data = await res.json();
+          alert('修改失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('请求失败: ' + err.message);
+      }
+    }
+    
+    async function deleteParticipant(participantId, name) {
+      if (!confirm(`确定要删除参与者 "${name}" 及其所有数据（可用性标记、评论）吗？此操作不可撤销。`)) {
+        return;
+      }
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/participants/${participantId}`, {
+          method: 'DELETE',
+          headers: {
+            'x-organizer-token': state.organizerToken
+          }
+        });
+        
+        if (res.ok) {
+          await refreshData();
+        } else {
+          const data = await res.json();
+          alert('删除失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('请求失败: ' + err.message);
+      }
+    }
+    
+    function renderCommentList(data) {
+      const container = document.getElementById('commentList');
+      
+      if (!data?.comments || data.comments.length === 0) {
+        container.innerHTML = '<div class="comment-empty">暂无评论</div>';
+        return;
+      }
+      
+      // 判断权限：发起者可以编辑/删除所有评论，参与者只能编辑/删除自己的
+      const isOrganizer = state.identity === 'organizer' && state.organizerToken;
+      
+      // 按时间倒序排列（最新的在前）
+      const sortedComments = [...data.comments].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      
+      const fragment = document.createDocumentFragment();
+      
+      for (const comment of sortedComments) {
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+        item.dataset.commentId = comment.id;
+        
+        // 格式化时间
+        const time = new Date(comment.createdAt);
+        const timeStr = time.toLocaleString('zh-CN', {
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        // 检查是否可以编辑/删除此评论
+        const isOwnComment = comment.participantName === state.participantName;
+        const canEdit = isOrganizer || isOwnComment;
+        const canDelete = isOrganizer || isOwnComment;
+        
+        // 操作按钮
+        let actionsHtml = '';
+        if (canEdit || canDelete) {
+          actionsHtml = '<div class="comment-actions">';
+          if (canEdit) {
+            actionsHtml += `<button class="btn-edit" onclick="startEditComment(${comment.id}, this)">编辑</button>`;
+          }
+          if (canDelete) {
+            actionsHtml += `<button class="btn-delete" onclick="deleteComment(${comment.id})">删除</button>`;
+          }
+          actionsHtml += '</div>';
+        }
+        
+        item.innerHTML = `
+          <div class="comment-header">
+            <span class="comment-author">${escapeHtml(comment.participantName || '匿名')}</span>
+            ${actionsHtml}
+            <span class="comment-time">${timeStr}</span>
+          </div>
+          <div class="comment-content" id="comment-content-${comment.id}">${escapeHtml(comment.content)}</div>
+        `;
+        
+        fragment.appendChild(item);
+      }
+      
+      container.innerHTML = '';
+      container.appendChild(fragment);
+    }
+    
+    function startEditComment(commentId, btnEl) {
+      const item = btnEl.closest('.comment-item');
+      const contentEl = document.getElementById(`comment-content-${commentId}`);
+      const originalContent = contentEl.textContent;
+      
+      // 标记为编辑状态
+      item.classList.add('editing');
+      
+      // 替换为编辑表单
+      contentEl.innerHTML = `
+        <div class="comment-edit-form">
+          <textarea id="edit-textarea-${commentId}" rows="2">${escapeHtml(originalContent)}</textarea>
+          <div class="comment-edit-actions">
+            <button class="btn-secondary" onclick="cancelEditComment(${commentId}, '${escapeHtml(originalContent).replace(/'/g, "\\'")}')">取消</button>
+            <button class="btn-primary" onclick="saveEditComment(${commentId})">保存</button>
+          </div>
+        </div>
+      `;
+      
+      // 聚焦到文本框
+      document.getElementById(`edit-textarea-${commentId}`).focus();
+    }
+    
+    function cancelEditComment(commentId, originalContent) {
+      const item = document.querySelector(`[data-comment-id="${commentId}"]`);
+      const contentEl = document.getElementById(`comment-content-${commentId}`);
+      
+      item.classList.remove('editing');
+      contentEl.textContent = originalContent;
+    }
+    
+    async function saveEditComment(commentId) {
+      const textarea = document.getElementById(`edit-textarea-${commentId}`);
+      const newContent = textarea.value.trim();
+      
+      if (!newContent) {
+        alert('评论内容不能为空');
+        return;
+      }
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      const headers = { 'Content-Type': 'application/json' };
+      
+      // 根据身份添加授权头
+      if (state.identity === 'organizer' && state.organizerToken) {
+        headers['x-organizer-token'] = state.organizerToken;
+      } else if (state.participantName) {
+        headers['x-participant-name'] = encodeURIComponent(state.participantName);
+      }
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/comments/${commentId}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ content: newContent })
+        });
+        
+        if (res.ok) {
+          await refreshData();
+        } else {
+          const data = await res.json();
+          alert('编辑失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('请求失败: ' + err.message);
+      }
+    }
+    
+    async function deleteComment(commentId) {
+      if (!confirm('确定要删除这条评论吗？')) {
+        return;
+      }
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      const headers = {};
+      
+      // 根据身份添加授权头
+      if (state.identity === 'organizer' && state.organizerToken) {
+        headers['x-organizer-token'] = state.organizerToken;
+      } else if (state.participantName) {
+        headers['x-participant-name'] = encodeURIComponent(state.participantName);
+      }
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/comments/${commentId}`, {
+          method: 'DELETE',
+          headers
+        });
+        
+        if (res.ok) {
+          await refreshData();
+        } else {
+          const data = await res.json();
+          alert('删除失败: ' + (data.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('请求失败: ' + err.message);
+      }
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function toggleDateSelection(chip, dateStr) {
+      if (state.selectedDates.has(dateStr)) {
+        state.selectedDates.delete(dateStr);
+        chip.classList.remove('selected');
+      } else {
+        state.selectedDates.add(dateStr);
+        chip.classList.add('selected');
+      }
+    }
+    
+    function handleDragEnd() {
+      if (dragState.isDragging) {
+        dragState.isDragging = false;
+        const container = document.getElementById('dateList');
+        if (container) {
+          container.classList.remove('dragging');
+        }
+      }
+    }
+
+    async function markAvailable() {
+      await updateAvailability('available');
+    }
+
+    async function markUnavailable() {
+      await updateAvailability('unavailable');
+    }
+
+    async function updateAvailability(status) {
+      if (!state.eventId || !state.participantName) {
+        showOutput('availOutput', '错误: 请先加入活动', true);
+        return;
+      }
+      if (state.selectedDates.size === 0) {
+        showOutput('availOutput', '错误: 请先选择日期', true);
+        return;
+      }
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      const dates = Array.from(state.selectedDates);
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/availability`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-participant-name': encodeURIComponent(state.participantName)
+          },
+          body: JSON.stringify({ dates, status })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showOutput('availOutput', { 
+            message: '✓ 更新成功', 
+            updates: Array.isArray(data) ? data.length : 1,
+            dates: dates.join(', ')
+          });
+          state.selectedDates.clear();
+          await refreshData();
+        } else {
+          showOutput('availOutput', data, true);
+        }
+      } catch (err) {
+        showOutput('availOutput', { error: '请求失败', message: err.message }, true);
+      }
+    }
+
+    async function addComment() {
+      if (!state.eventId || !state.participantName) {
+        showOutput('commentOutput', '错误: 请先加入活动', true);
+        return;
+      }
+      
+      const contentEl = document.getElementById('commentContent');
+      const content = contentEl.value.trim();
+      
+      if (!content) {
+        showOutput('commentOutput', '错误: 请输入评论内容', true);
+        return;
+      }
+      
+      if (content.length > 500) {
+        showOutput('commentOutput', '错误: 评论不能超过500字', true);
+        return;
+      }
+      
+      const encodedId = encodeURIComponent(state.eventId);
+      
+      try {
+        const res = await fetch(`/api/events/${encodedId}/comments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-participant-name': encodeURIComponent(state.participantName)
+          },
+          body: JSON.stringify({ content })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          contentEl.value = '';
+          showOutput('commentOutput', { message: '✓ 评论已发送', id: data.id });
+          // 刷新数据以更新评论列表
+          await refreshData();
+        } else {
+          showOutput('commentOutput', data, true);
+        }
+      } catch (err) {
+        showOutput('commentOutput', { error: '请求失败', message: err.message }, true);
+      }
+    }
+  </script>
+</body>
+</html>

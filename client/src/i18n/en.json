@@ -1,0 +1,78 @@
+{
+  "app": {
+    "title": "Shared Calendar",
+    "subtitle": "Real-time collaboration, no registration required"
+  },
+  "nav": {
+    "online": "Online",
+    "people": "people"
+  },
+  "auth": {
+    "namePlaceholder": "Enter your name",
+    "join": "Join",
+    "joined": "Joined"
+  },
+  "calendar": {
+    "today": "Today",
+    "prevMonth": "Previous",
+    "nextMonth": "Next",
+    "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  },
+  "event": {
+    "title": "Event title",
+    "startTime": "Start time",
+    "endTime": "End time",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "noEvents": "No events for this date",
+    "addEvent": "Add Event",
+    "createdBy": "Created by",
+    "participants": "Participants"
+  },
+  "note": {
+    "title": "Notes",
+    "placeholder": "Add a note...",
+    "add": "Add"
+  },
+  "poll": {
+    "title": "Poll",
+    "question": "Poll question",
+    "startPoll": "Start Poll",
+    "addOption": "Add Option",
+    "optionPlaceholder": "Enter option",
+    "vote": "Vote",
+    "votes": "votes"
+  },
+  "tag": {
+    "title": "Tag Management",
+    "create": "Create Tag",
+    "namePlaceholder": "Tag name",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "apply": "Apply to selected dates",
+    "selectDates": "Please select dates first",
+    "selectTag": "Please select a tag",
+    "weight": "Weight Info",
+    "weightDesc": "Available +1, Unavailable -2"
+  },
+  "theme": {
+    "light": "Light Mode",
+    "dark": "Dark Mode"
+  },
+  "language": {
+    "zh": "中文",
+    "en": "English",
+    "ja": "日本語"
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  }
+}
