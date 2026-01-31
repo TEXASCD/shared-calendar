@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npm run build && npm start",
+    "startCommand": "npm install --prefix server && npm install --prefix client && npm run build --prefix client && NODE_ENV=production node server/index.js",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
