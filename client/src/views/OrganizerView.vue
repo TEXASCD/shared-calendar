@@ -543,6 +543,18 @@ function copyShareLink() {
   alert('链接已复制！')
 }
 
+function switchToParticipant() {
+  // 从已加载的参与者列表中找到发起者对应的参与者记录
+  const me = participants.value.find(p => p.name === event.value?.organizerName)
+  if (me) {
+    sessionStorage.setItem(`participant_name_${eventId}`, me.name)
+    sessionStorage.setItem(`participant_id_${eventId}`, me.id)
+    router.push(`/event/${eventId}/participant`)
+  } else {
+    alert('未找到您的参与者记录，请通过分享链接加入活动')
+  }
+}
+
 function logout() {
   sessionStorage.removeItem(`organizer_token_${eventId}`)
   sessionStorage.removeItem(`organizer_name_${eventId}`)
@@ -568,6 +580,14 @@ onMounted(() => {
         <span class="role-badge">发起者</span>
       </div>
       <div class="header-actions">
+        <button class="btn-participant-switch" @click="switchToParticipant" title="以参与者身份标记日期">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <polyline points="17 11 19 13 23 9"></polyline>
+          </svg>
+          参与者视图
+        </button>
         <button class="btn-secondary" @click="showShareModal = true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="18" cy="5" r="3"></circle>
@@ -937,6 +957,27 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 12px;
+}
+
+.btn-participant-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-participant-switch:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .loading-state {

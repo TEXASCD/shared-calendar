@@ -9,6 +9,7 @@ const route = useRoute()
 const eventId = route.params.id
 const participantName = sessionStorage.getItem(`participant_name_${eventId}`)
 const participantId = sessionStorage.getItem(`participant_id_${eventId}`)
+const isAlsoOrganizer = !!sessionStorage.getItem(`organizer_token_${eventId}`)
 
 // State
 const event = ref(null)
@@ -310,6 +311,10 @@ async function saveEditComment(commentId) {
   }
 }
 
+function switchToOrganizer() {
+  router.push(`/event/${eventId}/organizer`)
+}
+
 function logout() {
   sessionStorage.removeItem(`participant_name_${eventId}`)
   sessionStorage.removeItem(`participant_id_${eventId}`)
@@ -342,6 +347,13 @@ onMounted(() => {
       </div>
       <div class="header-actions">
         <span v-if="isSaving" class="saving-indicator">保存中...</span>
+        <button v-if="isAlsoOrganizer" class="btn-organizer-switch" @click="switchToOrganizer" title="返回发起者管理界面">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          管理视图
+        </button>
         <button class="btn-ghost" @click="logout">退出</button>
       </div>
     </header>
@@ -569,6 +581,27 @@ onMounted(() => {
 .saving-indicator {
   font-size: 0.875rem;
   color: var(--primary);
+}
+
+.btn-organizer-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-organizer-switch:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .loading-state,
