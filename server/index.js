@@ -266,16 +266,31 @@ async function startServer() {
     }
   })
 
-  // 添加标签（仅发起者）
+  // 添加标签（发起者和参与者都可以）
   app.post('/api/events/:id/tags', (req, res) => {
     try {
       const organizerToken = req.headers['x-organizer-token']
-      if (!organizerToken || !db.verifyOrganizerToken(req.params.id, organizerToken)) {
-        return res.status(401).json({ error: '需要发起者权限' })
+      const rawName = req.headers['x-participant-name']
+      
+      let participantId = null
+      
+      if (organizerToken && db.verifyOrganizerToken(req.params.id, organizerToken)) {
+        const eventInfo = db.getEventInfo(req.params.id)
+        if (eventInfo) {
+          const p = db.getParticipantByName(req.params.id, eventInfo.organizerName)
+          if (p) participantId = p.id
+        }
+      } else if (rawName) {
+        const participantName = decodeURIComponent(rawName)
+        const p = db.getParticipantByName(req.params.id, participantName)
+        if (p) participantId = p.id
+        else return res.status(404).json({ error: '参与者不存在' })
+      } else {
+        return res.status(401).json({ error: '未授权' })
       }
       
       const { name, color, date } = req.body
-      const tag = db.addTag(req.params.id, name, color, date)
+      const tag = db.addTag(req.params.id, name, color, date, participantId)
       res.json(tag)
     } catch (err) {
       if (err instanceof db.ValidationError) {
@@ -286,15 +301,87 @@ async function startServer() {
     }
   })
 
-  // 删除标签（仅发起者）
+  // 删除标签（发起者可删任何标签，参与者只能删自己的）
   app.delete('/api/events/:id/tags/:tagId', (req, res) => {
     try {
       const organizerToken = req.headers['x-organizer-token']
-      if (!organizerToken || !db.verifyOrganizerToken(req.params.id, organizerToken)) {
-        return res.status(401).json({ error: '需要发起者权限' })
+      const rawName = req.headers['x-participant-name']
+      
+      if (organizerToken && db.verifyOrganizerToken(req.params.id, organizerToken)) {
+        db.deleteTag(req.params.id, req.params.tagId)
+      } else if (rawName) {
+        const participantName = decodeURIComponent(rawName)
+        const p = db.getParticipantByName(req.params.id, participantName)
+        if (p) {
+          db.deleteTagByParticipant(req.params.id, req.params.tagId, p.id)
+        } else {
+          return res.status(404).json({ error: '参与者不存在' })
+        }
+      } else {
+        return res.status(401).json({ error: '未授权' })
       }
       
-      db.deleteTag(req.params.id, req.params.tagId)
+      res.json({ success: true })
+    } catch (err) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  // 添加/更新日期备注（参与者和发起者）
+  app.post('/api/events/:id/date-notes', (req, res) => {
+    try {
+      const organizerToken = req.headers['x-organizer-token']
+      const rawName = req.headers['x-participant-name']
+      
+      let participantId = null
+      
+      if (organizerToken && db.verifyOrganizerToken(req.params.id, organizerToken)) {
+        const eventInfo = db.getEventInfo(req.params.id)
+        if (eventInfo) {
+          const p = db.getParticipantByName(req.params.id, eventInfo.organizerName)
+          if (p) participantId = p.id
+        }
+      } else if (rawName) {
+        const participantName = decodeURIComponent(rawName)
+        const p = db.getParticipantByName(req.params.id, participantName)
+        if (p) participantId = p.id
+        else return res.status(404).json({ error: '参与者不存在' })
+      } else {
+        return res.status(401).json({ error: '未授权' })
+      }
+      
+      const { date, content } = req.body
+      const note = db.addOrUpdateDateNote(req.params.id, participantId, date, content)
+      res.json(note)
+    } catch (err) {
+      if (err instanceof db.ValidationError) {
+        res.status(400).json({ error: err.message })
+      } else {
+        res.status(500).json({ error: err.message })
+      }
+    }
+  })
+
+  // 删除日期备注（发起者可删任何，参与者只能删自己的）
+  app.delete('/api/events/:id/date-notes/:noteId', (req, res) => {
+    try {
+      const organizerToken = req.headers['x-organizer-token']
+      const rawName = req.headers['x-participant-name']
+      
+      if (organizerToken && db.verifyOrganizerToken(req.params.id, organizerToken)) {
+        db.deleteDateNote(req.params.id, req.params.noteId)
+      } else if (rawName) {
+        const participantName = decodeURIComponent(rawName)
+        const p = db.getParticipantByName(req.params.id, participantName)
+        if (p) {
+          db.deleteDateNote(req.params.id, req.params.noteId, p.id)
+        } else {
+          return res.status(404).json({ error: '参与者不存在' })
+        }
+      } else {
+        return res.status(401).json({ error: '未授权' })
+      }
+      
       res.json({ success: true })
     } catch (err) {
       res.status(500).json({ error: err.message })

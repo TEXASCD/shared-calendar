@@ -35,6 +35,8 @@ const availabilityModalStatus = ref('available')
 const editingAvailCommentId = ref(null)
 const editingAvailCommentContent = ref('')
 
+const dateNotes = ref([])
+
 // Calendar state
 const currentDate = ref(new Date())
 const selectedDates = ref([])
@@ -63,6 +65,30 @@ const statistics = computed(() => {
   
   return getStatistics(byDate, participants.value)
 })
+
+const notesByDate = computed(() => {
+  const map = {}
+  dateNotes.value.forEach(n => {
+    if (!map[n.date]) map[n.date] = []
+    map[n.date].push(n)
+  })
+  return map
+})
+
+const tagsByDate = computed(() => {
+  const map = {}
+  tags.value.forEach(t => {
+    if (t.date) {
+      if (!map[t.date]) map[t.date] = []
+      map[t.date].push(t)
+    }
+  })
+  return map
+})
+
+function hasDateExtra(dateKey) {
+  return (notesByDate.value[dateKey]?.length > 0) || (tagsByDate.value[dateKey]?.length > 0)
+}
 
 const calendarDays = computed(() => {
   if (!event.value) return []
@@ -158,6 +184,7 @@ async function loadData() {
     availability.value = data.availability
     comments.value = data.comments
     tags.value = data.tags
+    dateNotes.value = data.dateNotes || []
   } catch (err) {
     error.value = err.message
   } finally {
@@ -642,6 +669,32 @@ onMounted(() => {
               <span class="stat-available">{{ day.availableCount }}</span>
               <span class="stat-unavailable">{{ day.unavailableCount }}</span>
             </div>
+
+            <!-- 标签色点 -->
+            <div v-if="day.isInRange && tagsByDate[day.dateKey]?.length" class="day-tag-dots">
+              <span v-for="t in tagsByDate[day.dateKey].slice(0, 3)" :key="t.id" class="tag-dot-small" :style="{ background: t.color }"></span>
+            </div>
+
+            <!-- 备注指示器 -->
+            <span v-if="day.isInRange && notesByDate[day.dateKey]?.length" class="note-indicator-org">✎</span>
+
+            <!-- 悬浮气泡 -->
+            <div v-if="day.isInRange && hasDateExtra(day.dateKey)" class="day-tooltip-org">
+              <div v-if="tagsByDate[day.dateKey]?.length" class="tooltip-section-org">
+                <div class="tooltip-label-org">标签</div>
+                <div class="tooltip-tags-org">
+                  <span v-for="t in tagsByDate[day.dateKey]" :key="t.id" class="tooltip-tag-org">
+                    <span class="tooltip-tag-dot-org" :style="{ background: t.color }"></span>{{ t.name }}
+                  </span>
+                </div>
+              </div>
+              <div v-if="notesByDate[day.dateKey]?.length" class="tooltip-section-org">
+                <div class="tooltip-label-org">备注</div>
+                <div v-for="n in notesByDate[day.dateKey]" :key="n.id" class="tooltip-note-org">
+                  <strong>{{ n.participantName }}：</strong>{{ n.content }}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -1069,6 +1122,11 @@ onMounted(() => {
 
 .day-cell.in-range {
   border: 1px solid var(--border-light);
+  overflow: visible;
+}
+
+.day-cell.in-range:hover {
+  z-index: 20;
 }
 
 .day-number {
@@ -1089,6 +1147,24 @@ onMounted(() => {
 .stat-unavailable {
   color: #ef4444;
 }
+
+/* 标签色点 & 备注指示器 & 悬浮气泡（发起者视图） */
+.day-tag-dots { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; pointer-events: none; }
+.tag-dot-small { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.note-indicator-org { position: absolute; top: 1px; left: 3px; font-size: 0.5rem; color: var(--primary); pointer-events: none; opacity: 0.8; }
+
+.day-tooltip-org { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; padding: 10px 14px; min-width: 180px; max-width: 260px; z-index: 100; box-shadow: var(--shadow-lg); text-align: left; font-size: 0.75rem; pointer-events: none; }
+.day-tooltip-org::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--bg-card); }
+.day-cell.in-range:hover .day-tooltip-org { display: block; }
+.tooltip-section-org { margin-bottom: 8px; }
+.tooltip-section-org:last-child { margin-bottom: 0; }
+.tooltip-label-org { font-weight: 600; color: var(--text-muted); margin-bottom: 4px; font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.tooltip-tags-org { display: flex; flex-wrap: wrap; gap: 4px; }
+.tooltip-tag-org { display: inline-flex; align-items: center; gap: 4px; background: var(--bg-secondary); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
+.tooltip-tag-dot-org { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tooltip-note-org { color: var(--text-secondary); margin-bottom: 4px; line-height: 1.4; }
+.tooltip-note-org:last-child { margin-bottom: 0; }
+.tooltip-note-org strong { color: var(--text-primary); }
 
 .color-legend {
   display: flex;

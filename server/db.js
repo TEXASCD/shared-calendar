@@ -134,12 +134,35 @@ export async function initDatabase() {
       )
     `)
 
+    // 日期备注表
+    db.run(`
+      CREATE TABLE IF NOT EXISTS date_notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id TEXT NOT NULL,
+        participant_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+        UNIQUE(event_id, participant_id, date),
+        FOREIGN KEY (event_id) REFERENCES scheduling_events(id),
+        FOREIGN KEY (participant_id) REFERENCES participants(id)
+      )
+    `)
+
     // 创建索引
     db.run(`CREATE INDEX IF NOT EXISTS idx_participants_event ON participants(event_id)`)
     db.run(`CREATE INDEX IF NOT EXISTS idx_availability_event ON availability(event_id)`)
     db.run(`CREATE INDEX IF NOT EXISTS idx_comments_event ON comments(event_id)`)
     db.run(`CREATE INDEX IF NOT EXISTS idx_tags_event ON event_tags(event_id)`)
+    db.run(`CREATE INDEX IF NOT EXISTS idx_date_notes_event ON date_notes(event_id)`)
   }, true)
+
+  // 为已有的 event_tags 表添加 participant_id 列（兼容旧数据）
+  try {
+    db.run(`ALTER TABLE event_tags ADD COLUMN participant_id INTEGER`)
+  } catch (e) {
+    // 列已存在则忽略
+  }
 
   initialized = true
   scheduleSave()
@@ -328,6 +351,7 @@ export function getEventFull(eventId, organizerToken = null) {
     availability: getAvailability(eventId),
     comments: getComments(eventId),
     tags: getTags(eventId),
+    dateNotes: getDateNotes(eventId),
     isOrganizer
   }
   
@@ -607,20 +631,23 @@ export function getComment(commentId) {
 // ============================================
 // Tag Operations
 // ============================================
-export function addTag(eventId, name, color = null, date = null) {
+export function addTag(eventId, name, color = null, date = null, participantId = null) {
   const sanitizedName = sanitizeString(name, LIMITS.TAG_NAME)
   if (!sanitizedName) {
     throw new ValidationError('标签名称不能为空')
   }
   
   runQuery(
-    `INSERT INTO event_tags (event_id, name, color, date) VALUES (?, ?, ?, ?)`,
-    [eventId, sanitizedName, color || getRandomColor(), date]
+    `INSERT INTO event_tags (event_id, name, color, date, participant_id) VALUES (?, ?, ?, ?, ?)`,
+    [eventId, sanitizedName, color || getRandomColor(), date, participantId]
   )
   
   const tag = getOne(
-    `SELECT id, event_id as eventId, name, color, date FROM event_tags
-     WHERE event_id = ? AND name = ? ORDER BY id DESC LIMIT 1`,
+    `SELECT t.id, t.event_id as eventId, t.name, t.color, t.date,
+            t.participant_id as participantId, COALESCE(p.name, '') as participantName
+     FROM event_tags t
+     LEFT JOIN participants p ON t.participant_id = p.id
+     WHERE t.event_id = ? AND t.name = ? ORDER BY t.id DESC LIMIT 1`,
     [eventId, sanitizedName]
   )
   
@@ -629,13 +656,78 @@ export function addTag(eventId, name, color = null, date = null) {
 
 export function getTags(eventId) {
   return getAll(
-    `SELECT id, event_id as eventId, name, color, date FROM event_tags WHERE event_id = ?`,
+    `SELECT t.id, t.event_id as eventId, t.name, t.color, t.date,
+            t.participant_id as participantId, COALESCE(p.name, '') as participantName
+     FROM event_tags t
+     LEFT JOIN participants p ON t.participant_id = p.id
+     WHERE t.event_id = ?`,
     [eventId]
+  )
+}
+
+export function deleteTagByParticipant(eventId, tagId, participantId) {
+  runQuery(
+    `DELETE FROM event_tags WHERE id = ? AND event_id = ? AND participant_id = ?`,
+    [tagId, eventId, participantId]
   )
 }
 
 export function deleteTag(eventId, tagId) {
   runQuery(`DELETE FROM event_tags WHERE id = ? AND event_id = ?`, [tagId, eventId])
+}
+
+// ============================================
+// Date Note Operations
+// ============================================
+export function getDateNotes(eventId) {
+  return getAll(
+    `SELECT dn.id, dn.event_id as eventId, dn.participant_id as participantId,
+            dn.date, dn.content, dn.created_at as createdAt, p.name as participantName
+     FROM date_notes dn
+     JOIN participants p ON dn.participant_id = p.id
+     WHERE dn.event_id = ?
+     ORDER BY dn.date, dn.created_at`,
+    [eventId]
+  )
+}
+
+export function addOrUpdateDateNote(eventId, participantId, date, content) {
+  const sanitizedContent = sanitizeString(content, LIMITS.COMMENT)
+  if (!sanitizedContent) {
+    throw new ValidationError('备注内容不能为空')
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new ValidationError('日期格式无效')
+  }
+  
+  runQuery(
+    `INSERT OR REPLACE INTO date_notes (event_id, participant_id, date, content)
+     VALUES (?, ?, ?, ?)`,
+    [eventId, participantId, date, sanitizedContent]
+  )
+  
+  return getOne(
+    `SELECT dn.id, dn.event_id as eventId, dn.participant_id as participantId,
+            dn.date, dn.content, dn.created_at as createdAt, p.name as participantName
+     FROM date_notes dn
+     JOIN participants p ON dn.participant_id = p.id
+     WHERE dn.event_id = ? AND dn.participant_id = ? AND dn.date = ?`,
+    [eventId, participantId, date]
+  )
+}
+
+export function deleteDateNote(eventId, noteId, participantId = null) {
+  if (participantId) {
+    runQuery(
+      `DELETE FROM date_notes WHERE id = ? AND event_id = ? AND participant_id = ?`,
+      [noteId, eventId, participantId]
+    )
+  } else {
+    runQuery(
+      `DELETE FROM date_notes WHERE id = ? AND event_id = ?`,
+      [noteId, eventId]
+    )
+  }
 }
 
 // ============================================
@@ -653,5 +745,5 @@ function getRandomColor() {
 // ============================================
 // Exports
 // ============================================
-export { LIMITS, WEIGHTS, DatabaseError, ValidationError }
+export { LIMITS, WEIGHTS, DatabaseError, ValidationError, deleteTagByParticipant }
 export default { initDatabase }
