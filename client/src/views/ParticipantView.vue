@@ -173,7 +173,7 @@ async function handleMouseUp() {
 async function loadData() {
   try {
     const response = await fetch(`/api/events/${eventId}/participant`, {
-      headers: { 'X-Participant-Name': participantName }
+      headers: { 'X-Participant-Name': encodeURIComponent(participantName) }
     })
     
     if (!response.ok) throw new Error('加载失败')
@@ -205,7 +205,7 @@ async function saveAvailability(dates, status) {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'X-Participant-Name': participantName
+        'X-Participant-Name': encodeURIComponent(participantName)
       },
       body: JSON.stringify({ dates, status })
     })
@@ -239,7 +239,7 @@ async function addComment() {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'X-Participant-Name': participantName
+        'X-Participant-Name': encodeURIComponent(participantName)
       },
       body: JSON.stringify({ content: newComment.value.trim() })
     })
@@ -260,7 +260,7 @@ async function deleteMyComment(commentId) {
   try {
     await fetch(`/api/events/${eventId}/comments/${commentId}`, {
       method: 'DELETE',
-      headers: { 'X-Participant-Name': participantName }
+      headers: { 'X-Participant-Name': encodeURIComponent(participantName) }
     })
     comments.value = comments.value.filter(c => c.id !== commentId)
   } catch (err) {
@@ -289,7 +289,7 @@ async function saveEditComment(commentId) {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',
-        'X-Participant-Name': participantName
+        'X-Participant-Name': encodeURIComponent(participantName)
       },
       body: JSON.stringify({ content: editingCommentContent.value.trim() })
     })
@@ -349,6 +349,16 @@ onMounted(() => {
     <div v-if="isLoading" class="loading-state">
       <div class="spinner"></div>
       <p>加载中...</p>
+    </div>
+    
+    <div v-else-if="error && !event" class="error-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p>{{ error }}</p>
+      <button class="btn-primary" @click="loadData()">重新加载</button>
     </div>
     
     <main v-else-if="event" class="main-content">
@@ -561,12 +571,24 @@ onMounted(() => {
   color: var(--primary);
 }
 
-.loading-state {
+.loading-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 80px 20px;
+}
+
+.error-state svg {
+  color: var(--danger);
+  margin-bottom: 16px;
+}
+
+.error-state p {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  font-size: 1rem;
 }
 
 .spinner {
