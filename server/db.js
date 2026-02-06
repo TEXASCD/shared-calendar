@@ -745,5 +745,5 @@ function getRandomColor() {
 // ============================================
 // Exports
 // ============================================
-export { LIMITS, WEIGHTS, DatabaseError, ValidationError, deleteTagByParticipant }
+export { LIMITS, WEIGHTS, DatabaseError, ValidationError }
 export default { initDatabase }
